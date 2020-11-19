@@ -4,11 +4,16 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @ORM\Entity(repositoryClass=UserRepository::class)
+ * @UniqueEntity(
+ *  fields={"email"},
+ *  message="L'email que vous avez renseigné, est déja utilisé."
+ * )
  */
 class User implements UserInterface
 {
@@ -21,6 +26,7 @@ class User implements UserInterface
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Assert\Email()
      */
     private $email;
 
@@ -30,12 +36,16 @@ class User implements UserInterface
     private $username;
 
     /**
+     * @ORM\Column(type="json")
+     */
+    private $roles = [];
+    /**
      * @ORM\Column(type="string", length=255)
      * @Assert\Length(min="8", minMessage="Votre mot de passe doit faire minimum 8 caractères")
      */
     private $userPassword;
     /**
-     * @Assert\EqualTo(propertyPath="password", message="Vous n'avez pas tapez les mêmes mots de passe")
+     * @Assert\EqualTo(propertyPath="userPassword", message="Vous n'avez pas tapez les mêmes mots de passe")
      */
     public $confirmPassword;
 
@@ -52,6 +62,15 @@ class User implements UserInterface
     public function eraseCredentials()
     {
         // leaving blank - I don't need/have a password!
+    }
+    
+    public function getRoles(): array
+    {
+        $roles = $this->roles;
+        // guarantee every user at least has ROLE_USER
+        $roles[] = 'ROLE_USER';
+
+        return array_unique($roles);
     }
 
     // End Function UserInterface
@@ -87,12 +106,12 @@ class User implements UserInterface
 
     public function getUserPassword(): ?string
     {
-        return $this->password;
+        return $this->userPassword;
     }
 
-    public function setUserPassword(string $password): self
+    public function setUserPassword(string $userPassword): self
     {
-        $this->password = $password;
+        $this->userPassword = $userPassword;
 
         return $this;
     }
